@@ -1,0 +1,30 @@
+# Chapter 14: every push runs lint and the full offline test suite,
+# including the Postgres tests against a real pgvector database.
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: agent
+          POSTGRES_PASSWORD: agent
+          POSTGRES_DB: agentic
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U agent" --health-interval 2s
+          --health-retries 30
+    env:
+      DATABASE_URL: postgresql://agent:agent@localhost:5432/agentic
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: >-
+          ruff check --select E,F,W,B --line-length 76
+          agentic research_assistant examples evals
+      - run: pytest -q

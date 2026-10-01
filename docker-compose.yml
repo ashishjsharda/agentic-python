@@ -1,0 +1,37 @@
+# Chapter 18: the research assistant with Postgres + pgvector.
+#   export ANTHROPIC_API_KEY=...  AGENT_PRICE_IN_PER_MTOK=...
+#   export AGENT_PRICE_OUT_PER_MTOK=...
+#   docker compose up --build
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+      POSTGRES_DB: agentic
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent -d agentic"]
+      interval: 2s
+      retries: 30
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://agent:agent@db/agentic
+      AGENT_PROVIDER: ${AGENT_PROVIDER:-anthropic}
+      AGENT_MODEL: ${AGENT_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AGENT_PRICE_IN_PER_MTOK: ${AGENT_PRICE_IN_PER_MTOK:?set it}
+      AGENT_PRICE_OUT_PER_MTOK: ${AGENT_PRICE_OUT_PER_MTOK:?set it}
+      DAILY_BUDGET_USD: ${DAILY_BUDGET_USD:-2.00}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

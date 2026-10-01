@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest>=8
+ruff>=0.5
+mcp>=2.2        # Chapter 11 interop tests
+langgraph>=1.0  # Chapter 17
